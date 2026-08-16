@@ -35,7 +35,29 @@ taken_count = 0
 error_count = 0
 
 lock = threading.Lock()
+tried_lock = threading.Lock()
 running = True
+
+# 이미 확인한 사용자명 저장 (중복 확인 방지)
+tried_usernames = set()
+
+def load_tried_usernames():
+    global tried_usernames
+    for filename in ("available.txt", "taken.txt"):
+        try:
+            with open(filename, "r", encoding="utf-8") as f:
+                for line in f:
+                    # 형식: [타임스탬프] 사용자명
+                    parts = line.strip().split("] ")
+                    if len(parts) == 2:
+                        tried_usernames.add(parts[1])
+        except FileNotFoundError:
+            continue
+    if tried_usernames:
+        print(
+            f"📂 이전에 확인한 사용자명 "
+            f"{len(tried_usernames)}개 불러옴 (중복 확인 제외)"
+        )
 
 def generate_username(length=4):
     while True:
@@ -45,6 +67,11 @@ def generate_username(length=4):
         )
         if ".." in username:
             continue
+        # 이미 확인한 사용자명이면 다시 생성
+        with tried_lock:
+            if username in tried_usernames:
+                continue
+            tried_usernames.add(username)
         return username
 
 def save_available(username):
@@ -227,6 +254,10 @@ def scan_multi_thread(num_threads=3):
     print(f"스레드 : {num_threads}개")
     print("길이   : 4자리")
     print("결과   : available.txt / taken.txt")
+    print("=" * 60)
+
+    load_tried_usernames()
+
     print("=" * 60)
     print()
 

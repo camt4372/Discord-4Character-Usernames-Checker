@@ -1,0 +1,7 @@
+# 결과 파일
+available.txt
+taken.txt
+
+# Python
+__pycache__/
+*.pyc
